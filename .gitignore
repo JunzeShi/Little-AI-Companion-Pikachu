@@ -1,0 +1,11 @@
+.DS_Store
+/build/
+/build.noindex/
+/.campaign-build/
+/artwork/
+/outputs/
+
+# Local credentials must never be committed.
+.env
+.env.*
+!.env.example

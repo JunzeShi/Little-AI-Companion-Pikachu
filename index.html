@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self' data:;" />
+    <title>Little Companion</title>
+    <link rel="stylesheet" href="vendor/katex/katex.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="window-shell">
+      <section class="card">
+        <header class="topbar drag-region">
+          <div class="brand"><span class="brand-dot"></span><span id="brand-name">Pikachu</span></div>
+          <div class="window-actions no-drag">
+            <button class="icon-button" id="tips-button" aria-label="Open pet tips" title="Tips and capabilities">?</button>
+            <button class="icon-button" id="history-button" aria-label="Open chat history" title="Chat history">☷</button>
+            <button class="icon-button" id="settings-button" aria-label="Open settings" title="Settings">⚙</button>
+          </div>
+        </header>
+
+        <section class="pet-stage drag-region" aria-label="Pikachu, your desktop companion">
+          <div class="pet-wrap" id="pet-wrap" role="img" aria-label="Pikachu is resting">
+            <img class="pet-picture is-visible" data-pet-pose="resting" src="assets/pikachu-still.png" alt="" aria-hidden="true" draggable="false" />
+            <img class="pet-picture" data-pet-pose="hello" src="assets/pikachu-hello.png" alt="" aria-hidden="true" draggable="false" />
+            <img class="pet-picture" data-pet-pose="thinking" src="assets/pikachu-thinking.png" alt="" aria-hidden="true" draggable="false" />
+            <img class="pet-picture" data-pet-pose="thinking-blink" src="assets/pikachu-thinking-blink.png" alt="" aria-hidden="true" draggable="false" />
+          </div>
+          <span class="pet-state" id="pet-state" role="status" aria-live="polite">Resting</span>
+          <button class="celebrate-button no-drag" id="celebrate-button" type="button" title="Celebrate a breakthrough">✦ Celebrate</button>
+          <div class="speech-bubble" id="speech-bubble" role="status" aria-live="polite" hidden></div>
+        </section>
+
+        <section class="chat-section">
+          <div class="chat-heading">
+            <div><p class="eyebrow">YOUR SPACE</p><h1 id="greeting">What’s on your mind?</h1></div>
+            <span class="connection-pill" id="connection-pill"><i></i><span>Checking local model</span></span>
+          </div>
+          <div class="context-meter" id="context-meter" role="progressbar" aria-label="Approximate context remaining" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="Calculating remaining context">
+            <div class="context-meter-copy"><span>Context left</span><span id="context-label">Calculating…</span></div>
+            <div class="context-track"><span id="context-fill"></span></div>
+          </div>
+          <div class="message-pane">
+            <div class="messages" id="messages" aria-live="polite">
+              <div class="message assistant-message"><span class="message-avatar">p</span><p>Ask me anything. Your messages stay on this computer when I’m connected to a local model.</p></div>
+            </div>
+            <button class="jump-latest" id="jump-latest" type="button" aria-label="Jump to latest answer" title="Jump to latest answer" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15m-7-7 7 7 7-7" /></svg>
+            </button>
+          </div>
+          <div class="tool-toolbar" aria-label="Pet tools">
+            <button class="tool-button" id="timer-tool" type="button" aria-expanded="false" title="Show timers and stopwatch">◷ Timer</button>
+            <button class="tool-button web-search-button" id="web-search-button" type="button" aria-pressed="false" title="Web search is off. Click for automatic search.">🌐 Offline</button>
+            <button class="tool-button screen-button" id="screen-button" type="button" aria-pressed="false" title="Capture once for your next message">▧ Look at my screen</button>
+            <button class="tool-button" id="focus-button" type="button" aria-expanded="false">◷ Pomodoro</button>
+          </div>
+          <div class="tool-controls" id="tool-controls" hidden><span id="tool-hint"></span></div>
+          <div class="clock-panel" id="clock-panel" hidden>
+            <div class="clock-heading"><strong>Timers &amp; stopwatch</strong><button id="clock-hide" type="button" aria-label="Hide timers">×</button></div>
+            <div id="countdown-list" class="countdown-list"></div>
+            <div class="stopwatch-row"><span>Stopwatch</span><strong id="stopwatch-clock">00:00</strong><button id="stopwatch-toggle" type="button">Start</button><button id="stopwatch-reset" type="button">Reset</button></div>
+            <p id="clock-hint">Ask “set a timer for 10 minutes” or “start a stopwatch.”</p>
+          </div>
+          <div class="local-context" id="local-context" hidden>
+            <span id="local-context-label"></span><button id="local-context-clear" type="button">Clear</button>
+          </div>
+          <div class="focus-panel" id="focus-panel" hidden>
+            <div class="focus-top"><strong id="focus-title">Ready to focus?</strong><span id="focus-clock">25:00</span></div>
+            <div class="focus-options"><label>Focus <select id="focus-length"><option value="25">25 min</option><option value="15">15 min</option><option value="45">45 min</option><option value="60">60 min</option></select></label><label>Break <select id="break-length"><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option></select></label><button id="focus-start" type="button">Start focus</button><button id="focus-reset" type="button">Reset</button></div>
+            <p id="focus-status">A little focus, then a little rest.</p>
+          </div>
+          <div class="screen-tools" aria-label="Screen capture target">
+            <label for="screen-target">Source</label>
+            <select class="screen-target" id="screen-target" aria-label="Screen area to capture" title="Choose an area, window, or display">
+              <option value="frontmost">Frontmost app window</option>
+            </select>
+            <button class="source-refresh" id="screen-sources" type="button" title="List current applications and windows">Choose app/window ↻</button>
+          </div>
+          <div class="screen-status" id="screen-status" role="status" aria-live="polite" hidden>
+            <span id="screen-status-text"></span>
+            <div class="screen-status-actions">
+              <button id="screen-settings" type="button" hidden>Open Screen Recording settings</button>
+              <button id="screen-clear" type="button" hidden>Clear</button>
+            </div>
+          </div>
+          <form class="composer" id="chat-form">
+            <div class="attachment-wrap">
+              <button class="attachment-toggle" id="attachment-toggle" type="button" aria-label="Add a file or folder" aria-expanded="false" title="Add a file or folder">＋</button>
+              <div class="attachment-menu" id="attachment-menu" hidden>
+                <button id="file-button" type="button">Add a file…</button>
+                <button id="folder-button" type="button">Choose a folder…</button>
+              </div>
+              <input id="file-input" type="file" accept=".pdf,.txt,.md,.csv,.tsv,.rtf,.doc,.docx,.ppt,.pptx,.xlsx,.png,.jpg,.jpeg,.heic,.tif,.tiff,.bmp" hidden />
+            </div>
+            <textarea id="chat-input" rows="1" placeholder="Talk to your pet…" aria-label="Message your pet"></textarea>
+            <select class="speech-language" id="speech-language" aria-label="Dictation language" title="Dictation language">
+              <option value="en-US">EN</option>
+              <option value="zh-CN">简中</option>
+              <option value="zh-TW">繁中</option>
+              <option value="fr-FR">FR</option>
+              <option value="de-DE">DE</option>
+              <option value="ja-JP">日本語</option>
+            </select>
+            <button class="speech-button" id="speech-button" type="button" aria-label="Start voice dictation" title="Speak a draft">🎙</button>
+            <button class="stop-button" id="stop-button" type="button" hidden aria-label="Stop response" title="Stop response">■ Stop</button>
+            <button class="send-button" id="send-button" type="submit" aria-label="Send message">↑</button>
+          </form>
+          <p class="speech-status" id="speech-status" aria-live="polite" hidden></p>
+        </section>
+      </section>
+
+      <section class="history-layer hidden" id="history-layer" aria-hidden="true">
+        <div class="history-panel">
+          <div class="history-top">
+            <div><p class="eyebrow">YOUR CONVERSATIONS</p><h2>Chat history</h2></div>
+            <button class="icon-button" id="history-close" aria-label="Close chat history">×</button>
+          </div>
+          <div class="history-actions-top">
+            <div class="history-tabs" role="tablist" aria-label="Chat categories">
+              <button class="history-tab active" id="active-chats-tab" type="button" aria-pressed="true">Chats</button>
+              <button class="history-tab" id="archived-chats-tab" type="button" aria-pressed="false">Archived</button>
+            </div>
+            <button class="new-chat-button" id="new-chat-button" type="button">＋ New chat</button>
+          </div>
+          <div class="history-list" id="history-list" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="tips-layer hidden" id="tips-layer" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="tips-title">
+        <div class="tips-panel">
+          <div class="tips-top"><div><p class="eyebrow">A LITTLE HELP</p><h2 id="tips-title">Tips &amp; capabilities</h2></div><button class="icon-button" id="tips-close" aria-label="Close tips">×</button></div>
+          <p class="tips-intro">Ask naturally, or use the controls in the chat.</p>
+          <ul class="tips-list">
+            <li><strong>Chat locally.</strong> Start a local model in Bionic or LM Studio; choose it in Settings. Your messages and saved chats stay on this Mac.</li>
+            <li><strong>Ask about a file.</strong> Drop a file onto the window, or use ＋ → Add a file. Supports PDF, Word (.doc/.docx), PowerPoint (.ppt/.pptx), Excel (.xlsx), RTF, text, Markdown, CSV, TSV and common images up to 20 MB. Questions use local excerpts. Images need a vision-capable model for visual details.</li>
+            <li><strong>Document limits.</strong> PDFs examine up to 200 pages and attempt on-device text recognition on up to 50 scanned pages; results depend on legibility. PowerPoint extracts slide text, not embedded images or charts; older .ppt slide boundaries may be incomplete. Excel uses stored cell values and may show formulas without cached results; it does not recalculate or interpret charts and formatting. Long documents use selected excerpts.</li>
+            <li><strong>Search a folder.</strong> Use ＋ → Choose a folder, then ask about its documents. Local keyword search checks up to 200 supported files of at most 2 MB each; images and scanned pages are skipped. Attach a scanned PDF directly to try text recognition. Clear removes the selection.</li>
+            <li><strong>Look at my screen.</strong> Choose a display or selected area, or click Choose app/window to list open applications and windows. Choose a source, click the screen button, then ask your question. The button stays highlighted while the capture is ready; click it again or Clear to discard it. The capture is used once and then discarded. macOS may request Screen Recording permission.</li>
+            <li><strong>Stop and moods.</strong> Stop a reply while Pikachu is working; the visible mood reflects your interactions and the result.</li>
+            <li><strong>Chat memory.</strong> Older turns are summarized locally when a conversation approaches its context limit; the full chat remains in history.</li>
+            <li><strong>Timers and stopwatch.</strong> Ask “set a timer for an hour” or “start a stopwatch.” Live clocks appear in Timer; cancel individual timers or pause and reset the stopwatch. macOS notifications can alert you when a timer ends.</li>
+            <li><strong>Pomodoro.</strong> Open Pomodoro to set focus and break lengths, or ask “start a 25 minute Pomodoro.” Start, pause or reset; Pikachu gives a gentle reminder when each phase finishes. Start each break when you’re ready.</li>
+            <li><strong>Pet routines.</strong> Pikachu can greet you in the morning and celebrate completed timers or an “I get it” moment. Use Celebrate for a cheer anytime; choose the fireworks and routine settings in Pet settings.</li>
+            <li><strong>Math and translation.</strong> Ask a calculation or say “translate this into French.” Pikachu handles these without extra buttons. Equations are displayed with readable math symbols.</li>
+            <li><strong>Web search.</strong> Click the web search button to cycle through Offline, Auto, and Always. Web searches send a query to the provider. Selected file, folder, and screen contents stay local.</li>
+            <li><strong>Dictate.</strong> Choose a language and press the microphone. Review the draft before sending. Network speech is off unless you enable it in Settings.</li>
+            <li><strong>Chat history.</strong> Open the history icon to start, revisit, archive, or delete chats. Settings let you change the pet’s name, model, voice privacy, and search connection.</li>
+          </ul>
+          <p class="tips-note">File and folder selections are temporary; questions and answers are saved in your local chat history. Capture and file interpretation depend on the selected model.</p>
+        </div>
+      </section>
+
+      <section class="settings-layer hidden" id="settings-layer" aria-hidden="true">
+        <div class="settings-panel">
+          <div class="settings-top"><div><p class="eyebrow">MAKE IT YOURS</p><h2>Pet settings</h2></div><button class="icon-button" id="settings-close" aria-label="Close settings">×</button></div>
+          <label class="field-label" for="pet-name">Pet name</label>
+          <input class="text-field" id="pet-name" maxlength="32" />
+          <label class="field-label" for="user-name">Your name (optional)</label>
+          <input class="text-field" id="user-name" maxlength="32" />
+          <label class="field-label" for="api-endpoint">Local API address</label>
+          <input class="text-field" id="api-endpoint" spellcheck="false" placeholder="http://127.0.0.1:1234/v1" />
+          <p class="field-hint">Start the local API in LM Studio or Bionic, then enter its address here. This address connects only to a model on this computer.</p>
+          <label class="field-label" for="model-select">Model</label>
+          <div class="model-row"><select class="text-field" id="model-select"><option value="">Detect models…</option></select><button class="secondary-button" id="detect-button" type="button">Detect</button></div>
+          <p class="field-hint" id="model-status">Use Detect to check the connection.</p>
+          <label class="field-label" for="personality">Personality</label>
+          <textarea class="text-field personality-field" id="personality" rows="4" maxlength="3000"></textarea>
+          <label class="field-label">Pet routines</label>
+          <label class="setting-toggle" for="morning-greeting"><input id="morning-greeting" type="checkbox" /><span>Give me a morning greeting</span></label>
+          <label class="setting-toggle" for="timer-celebrations"><input id="timer-celebrations" type="checkbox" /><span>Celebrate finished timers and Pomodoro focus sessions</span></label>
+          <label class="setting-toggle" for="aha-celebrations"><input id="aha-celebrations" type="checkbox" /><span>Celebrate when I say something has clicked</span></label>
+          <p class="field-hint">The morning greeting appears once a day when you open Pikachu between 5 a.m. and noon.</p>
+          <label class="field-label">Celebration style</label>
+          <label class="setting-toggle" for="celebration-pet-cheer"><input id="celebration-pet-cheer" type="checkbox" /><span>Pikachu cheers</span></label>
+          <label class="setting-toggle" for="celebration-fireworks"><input id="celebration-fireworks" type="checkbox" /><span>Show fireworks across the app</span></label>
+          <label class="field-label" for="firework-intensity">Fireworks</label>
+          <select class="text-field" id="firework-intensity">
+            <option value="gentle">Gentle</option>
+            <option value="balanced">Balanced</option>
+            <option value="bright">Bright</option>
+          </select>
+          <button class="secondary-button celebration-preview" id="celebration-preview" type="button">Preview fireworks</button>
+          <label class="field-label" for="allow-network-speech">Voice dictation privacy</label>
+          <label class="setting-toggle" for="allow-network-speech"><input id="allow-network-speech" type="checkbox" /><span>Allow Apple network speech when on-device speech isn’t available</span></label>
+          <p class="field-hint">On-device support varies by Mac and language. If you enable network speech, Apple may process audio online. The transcript stays in the draft until you press Send.</p>
+          <label class="field-label">Optional web search</label>
+          <p class="field-hint">New chats start in Offline mode. Use Auto or Always to send search queries to a web provider and give the results to your local model.</p>
+          <label class="field-label">Tavily search key</label>
+          <button class="secondary-button" id="configure-search-key" type="button">Save or replace key…</button>
+          <p class="field-hint">Your key is saved in this Mac’s Keychain. Pikachu reuses recent results and caps its Tavily requests at 1,000 per month.</p>
+          <button class="secondary-button" id="get-search-key" type="button">Open Tavily ↗</button>
+          <p class="field-hint" id="web-search-status" role="status">When search is enabled without a key, Pikachu tries public feeds. Their availability and coverage vary.</p>
+          <div class="settings-bottom"><span id="save-status"></span><button class="primary-button" id="save-settings" type="button">Save settings</button></div>
+        </div>
+      </section>
+    </main>
+    <canvas class="celebration-canvas" id="celebration-canvas" aria-hidden="true" hidden></canvas>
+    <script src="vendor/katex/katex.min.js"></script>
+    <script src="renderer.js"></script>
+  </body>
+</html>

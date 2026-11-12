@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleExecutable</key>
+  <string>LittleCompanion</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.localcompanion.pet</string>
+  <key>CFBundleName</key>
+  <string>Little Companion</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>0.1.0</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>13.0</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Little Companion uses the microphone only while you dictate a message.</string>
+  <key>NSScreenCaptureUsageDescription</key>
+  <string>Little Companion captures a single screen image only when you ask about your screen or press Look at my screen, so your local model can answer your question.</string>
+  <key>NSSpeechRecognitionUsageDescription</key>
+  <string>Little Companion converts your speech into an editable message draft.</string>
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsLocalNetworking</key>
+    <true/>
+  </dict>
+</dict>
+</plist>
