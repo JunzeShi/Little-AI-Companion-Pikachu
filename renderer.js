@@ -60,6 +60,11 @@ const elements = {
   newChat: document.querySelector('#new-chat-button'),
   petName: document.querySelector('#pet-name'),
   userName: document.querySelector('#user-name'),
+  modelProvider: document.querySelector('#model-provider'),
+  providerHint: document.querySelector('#provider-hint'),
+  modelTokenSettings: document.querySelector('#model-token-settings'),
+  configureModelToken: document.querySelector('#configure-model-token'),
+  modelTokenStatus: document.querySelector('#model-token-status'),
   endpoint: document.querySelector('#api-endpoint'),
   model: document.querySelector('#model-select'),
   personality: document.querySelector('#personality'),
@@ -909,7 +914,8 @@ async function refreshContextMeter() {
 function openSettings() {
   elements.petName.value = config.petName;
   elements.userName.value = config.userName || '';
-  elements.endpoint.value = config.endpoint;
+  elements.modelProvider.value = config.modelProvider;
+  showModelProfile();
   elements.personality.value = config.personality;
   const routines = config.routines || {};
   elements.morningGreeting.checked = routines.morningGreeting !== false;
@@ -926,7 +932,7 @@ function openSettings() {
     : 'When search is enabled, Pikachu can use public feeds or your own Tavily key.';
   elements.settingsLayer.classList.remove('hidden');
   elements.settingsLayer.setAttribute('aria-hidden', 'false');
-  refreshModels(false);
+  refreshModels();
 }
 
 function closeSettings() {
@@ -954,31 +960,57 @@ function updateFireworkSettings() {
 elements.celebrationFireworks.addEventListener('change', updateFireworkSettings);
 elements.celebrationPreview.addEventListener('click', () => playFireworks(elements.fireworkIntensity.value));
 
-async function refreshModels(showStatus = true) {
-  const endpoint = elements.endpoint.value.trim() || config.endpoint;
+const providerHints = {
+  bionic: 'Start the Local Model API in Bionic.',
+  lmStudio: 'Start the server in LM Studio’s Developer tab. Add a token if Require Authentication is enabled.',
+  ollama: 'Start Ollama and download a local model. The standard local server works without a token.',
+  custom: 'Enter an OpenAI-compatible API address on this Mac.'
+};
+let modelLookup = 0;
+
+function showModelProfile() {
+  const provider = elements.modelProvider.value;
+  const profile = config.modelProfiles[provider];
+  elements.endpoint.value = profile.endpoint;
+  elements.model.replaceChildren(new Option(profile.model || 'Detect models…', profile.model));
+  elements.providerHint.textContent = providerHints[provider];
+  elements.modelTokenSettings.hidden = provider !== 'lmStudio' && provider !== 'ollama';
+  elements.modelTokenStatus.textContent = '';
+}
+
+function draftModelConnection() {
+  return { modelProvider: elements.modelProvider.value, endpoint: elements.endpoint.value.trim() };
+}
+
+async function refreshModels(useSavedConnection = false) {
+  const lookup = ++modelLookup;
+  const connection = useSavedConnection ? { modelProvider: config.modelProvider, endpoint: config.endpoint } : draftModelConnection();
+  const previous = useSavedConnection ? config.model : elements.model.value;
+  const isSaved = connection.modelProvider === config.modelProvider && connection.endpoint === config.endpoint;
+  const setModelStatus = (ready, label) => { if (isSaved && !isReplying) setConnection(ready, label); };
   elements.detect.disabled = true;
   elements.modelStatus.textContent = 'Connecting to your local model…';
   try {
-    const models = await companion.listModels(endpoint);
-    const previous = elements.model.value || config.model;
+    const models = await companion.listModels(connection);
+    if (lookup !== modelLookup) return;
     elements.model.replaceChildren();
     if (!models.length) {
       elements.model.add(new Option('No models available', ''));
-      elements.modelStatus.textContent = 'Connected, but no model is loaded. Load one in LM Studio or Bionic.';
-      setConnection(true, 'Server ready · no model');
+      elements.modelStatus.textContent = 'Connected. Load or download a model in the selected server, then detect again.';
+      setModelStatus(true, 'Server ready · no model');
       return;
     }
     for (const model of models) elements.model.add(new Option(model, model));
     elements.model.value = models.includes(previous) ? previous : models[0];
     elements.modelStatus.textContent = `${models.length} model${models.length === 1 ? '' : 's'} found on this computer.`;
-    setConnection(true, 'Local model ready');
+    setModelStatus(true, 'Local model ready');
   } catch (error) {
-    elements.model.replaceChildren(new Option('Could not connect', config.model || ''));
+    if (lookup !== modelLookup) return;
+    elements.model.replaceChildren(new Option(previous || 'Could not connect', previous));
     elements.modelStatus.textContent = error.message;
-    setConnection(false, 'Local server offline');
-    if (!showStatus) return;
+    setModelStatus(false, 'Check local server');
   } finally {
-    elements.detect.disabled = false;
+    if (lookup === modelLookup) elements.detect.disabled = false;
   }
 }
 
@@ -1167,8 +1199,26 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && !elements.tipsLayer.classList.contains('hidden')) closeTips();
   if (event.key === 'Escape') setAttachmentMenu(false);
 });
-elements.detect.addEventListener('click', () => refreshModels(true));
-elements.endpoint.addEventListener('change', () => refreshModels(false));
+elements.detect.addEventListener('click', () => refreshModels());
+elements.endpoint.addEventListener('change', () => {
+  elements.modelTokenStatus.textContent = '';
+  refreshModels();
+});
+elements.modelProvider.addEventListener('change', () => {
+  showModelProfile();
+  refreshModels();
+});
+elements.configureModelToken.addEventListener('click', async () => {
+  const connection = draftModelConnection();
+  try {
+    if (await companion.configureModelToken(connection)) {
+      elements.modelTokenStatus.textContent = 'Token settings updated in this Mac’s Keychain.';
+      await refreshModels();
+    }
+  } catch (error) {
+    elements.modelTokenStatus.textContent = error.message;
+  }
+});
 function setAttachmentMenu(open) {
   elements.attachmentMenu.hidden = !open;
   elements.attachmentToggle.setAttribute('aria-expanded', String(open));
@@ -1474,7 +1524,7 @@ elements.save.addEventListener('click', async () => {
   elements.saveStatus.textContent = 'Saving…';
   try {
     config = await companion.saveConfig({
-      endpoint: elements.endpoint.value,
+      ...draftModelConnection(),
       model: elements.model.value,
       petName: elements.petName.value,
       userName: elements.userName.value,
@@ -1485,6 +1535,8 @@ elements.save.addEventListener('click', async () => {
     });
     updateSearchButton();
     updatePetName(config.petName);
+    void refreshModels(true);
+    void refreshContextMeter();
     elements.webSearchStatus.textContent = config.hasSearchKey
       ? 'A Tavily key is stored on this Mac. Tavily confirms it when a search runs; free feeds are the fallback.'
       : 'Free web feed fallback is available. Add a Tavily key for more reliable search.';
@@ -1533,5 +1585,5 @@ async function maybeMorningGreeting() {
   updateSearchButton();
   updateToolControls();
   lastHoverAt = performance.now();
-  await refreshModels(false);
+  await refreshModels(true);
 })();

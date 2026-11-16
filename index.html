@@ -159,9 +159,20 @@
           <input class="text-field" id="pet-name" maxlength="32" />
           <label class="field-label" for="user-name">Your name (optional)</label>
           <input class="text-field" id="user-name" maxlength="32" />
+          <label class="field-label" for="model-provider">Model server</label>
+          <select class="text-field" id="model-provider">
+            <option value="bionic">Bionic</option>
+            <option value="lmStudio">LM Studio</option>
+            <option value="ollama">Ollama</option>
+            <option value="custom">Custom local server</option>
+          </select>
           <label class="field-label" for="api-endpoint">Local API address</label>
           <input class="text-field" id="api-endpoint" spellcheck="false" placeholder="http://127.0.0.1:1234/v1" />
-          <p class="field-hint">Start the local API in LM Studio or Bionic, then enter its address here. This address connects only to a model on this computer.</p>
+          <p class="field-hint" id="provider-hint"></p>
+          <div id="model-token-settings" hidden>
+            <button class="secondary-button" id="configure-model-token" type="button">Manage API token…</button>
+            <p class="field-hint" id="model-token-status" role="status"></p>
+          </div>
           <label class="field-label" for="model-select">Model</label>
           <div class="model-row"><select class="text-field" id="model-select"><option value="">Detect models…</option></select><button class="secondary-button" id="detect-button" type="button">Detect</button></div>
           <p class="field-hint" id="model-status">Use Detect to check the connection.</p>
